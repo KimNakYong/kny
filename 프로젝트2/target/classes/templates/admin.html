@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 대시보드 - 레스토랑 예약 시스템</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        .btn-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+        }
+        .btn-custom:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+            color: white;
+            transform: translateY(-2px);
+        }
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 0;
+        }
+        .footer {
+            background-color: #343a40;
+            color: white;
+            padding: 40px 0 20px;
+        }
+        .stats-card {
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .stats-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .recent-activity {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .activity-item {
+            padding: 0.75rem;
+            border-bottom: 1px solid #eee;
+        }
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-utensils me-2"></i>레스토랑 예약 시스템
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/restaurants">레스토랑</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reservations">예약</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">로그인</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/admin">관리자</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container text-center">
+            <h1 class="display-4 fw-bold mb-4">관리자 대시보드</h1>
+            <p class="lead mb-5">시스템 현황을 한눈에 확인하고 효율적으로 관리하세요</p>
+            <div class="d-flex justify-content-center gap-3">
+                <button class="btn btn-custom btn-lg" onclick="refreshDashboard()">
+                    <i class="fas fa-sync-alt me-2"></i>새로고침
+                </button>
+                <button class="btn btn-outline-light btn-lg" onclick="exportData()">
+                    <i class="fas fa-download me-2"></i>데이터 내보내기
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Statistics Section -->
+    <section class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">시스템 통계</h2>
+            <div class="row g-4">
+                <div class="col-md-3">
+                    <div class="card stats-card text-center h-100">
+                        <div class="card-body">
+                            <i class="fas fa-utensils stat-icon text-primary"></i>
+                            <div class="stat-number text-primary" id="totalRestaurants">0</div>
+                            <p class="card-text">등록된 레스토랑</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card text-center h-100">
+                        <div class="card-body">
+                            <i class="fas fa-users stat-icon text-success"></i>
+                            <div class="stat-number text-success" id="totalCustomers">0</div>
+                            <p class="card-text">등록된 고객</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card text-center h-100">
+                        <div class="card-body">
+                            <i class="fas fa-calendar-check stat-icon text-info"></i>
+                            <div class="stat-number text-info" id="totalReservations">0</div>
+                            <p class="card-text">총 예약 수</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card text-center h-100">
+                        <div class="card-body">
+                            <i class="fas fa-chart-line stat-icon text-warning"></i>
+                            <div class="stat-number text-warning" id="pendingReservations">0</div>
+                            <p class="card-text">대기중인 예약</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Charts and Analytics Section -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>예약 상태 분포</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="reservationStatusChart">
+                                <!-- 차트가 여기에 표시됩니다 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>인기 레스토랑</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="popularRestaurantsChart">
+                                <!-- 차트가 여기에 표시됩니다 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recent Activity Section -->
+    <section class="py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-clock me-2"></i>최근 활동</h5>
+                        </div>
+                        <div class="card-body recent-activity" id="recentActivity">
+                            <!-- 최근 활동 목록이 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-tools me-2"></i>빠른 작업</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="/restaurants" class="btn btn-outline-primary">
+                                    <i class="fas fa-utensils me-2"></i>레스토랑 관리
+                                </a>
+                                <a href="/reservations" class="btn btn-outline-success">
+                                    <i class="fas fa-calendar me-2"></i>예약 관리
+                                </a>
+                                <a href="/customers" class="btn btn-outline-info">
+                                    <i class="fas fa-users me-2"></i>고객 관리
+                                </a>
+                                <button class="btn btn-outline-warning" onclick="backupData()">
+                                    <i class="fas fa-database me-2"></i>데이터 백업
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="systemMaintenance()">
+                                    <i class="fas fa-cog me-2"></i>시스템 유지보수
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-utensils me-2"></i>레스토랑 예약 시스템</h5>
+                    <p class="text-muted">최고의 레스토랑 예약 경험을 제공합니다.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <h6>연락처</h6>
+                    <p class="text-muted">
+                        <i class="fas fa-phone me-2"></i>02-1234-5678<br>
+                        <i class="fas fa-envelope me-2"></i>info@restaurant-reservation.com
+                    </p>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="text-center">
+                <p class="text-muted mb-0">&copy; 2024 레스토랑 예약 시스템. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let dashboardData = {};
+
+        // 페이지 로드 시 대시보드 데이터 로드
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+        });
+
+        // 대시보드 데이터 로드
+        async function loadDashboardData() {
+            try {
+                const [restaurantsResponse, customersResponse, reservationsResponse] = await Promise.all([
+                    fetch('/api/restaurants'),
+                    fetch('/api/customers'),
+                    fetch('/api/reservations')
+                ]);
+                
+                const restaurants = await restaurantsResponse.json();
+                const customers = await customersResponse.json();
+                const reservations = await reservationsResponse.json();
+                
+                dashboardData = {
+                    restaurants: restaurants,
+                    customers: customers,
+                    reservations: reservations
+                };
+                
+                updateDashboard();
+            } catch (error) {
+                console.error('대시보드 데이터 로드 실패:', error);
+                showError('대시보드 데이터를 불러오는데 실패했습니다.');
+            }
+        }
+
+        // 대시보드 업데이트
+        function updateDashboard() {
+            updateStatistics();
+            updateCharts();
+            updateRecentActivity();
+        }
+
+        // 통계 업데이트
+        function updateStatistics() {
+            const { restaurants, customers, reservations } = dashboardData;
+            
+            document.getElementById('totalRestaurants').textContent = restaurants.length;
+            document.getElementById('totalCustomers').textContent = customers.length;
+            document.getElementById('totalReservations').textContent = reservations.length;
+            
+            const pendingReservations = reservations.filter(r => r.status === 'PENDING').length;
+            document.getElementById('pendingReservations').textContent = pendingReservations;
+        }
+
+        // 차트 업데이트
+        function updateCharts() {
+            updateReservationStatusChart();
+            updatePopularRestaurantsChart();
+        }
+
+        // 예약 상태 차트 업데이트
+        function updateReservationStatusChart() {
+            const { reservations } = dashboardData;
+            const statusCounts = {
+                'PENDING': 0,
+                'CONFIRMED': 0,
+                'CANCELLED': 0,
+                'COMPLETED': 0
+            };
+            
+            reservations.forEach(reservation => {
+                statusCounts[reservation.status]++;
+            });
+            
+            const chartContainer = document.getElementById('reservationStatusChart');
+            chartContainer.innerHTML = `
+                <div class="row text-center">
+                    <div class="col-3">
+                        <div class="text-warning">
+                            <h4>${statusCounts.PENDING}</h4>
+                            <small>대기중</small>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-success">
+                            <h4>${statusCounts.CONFIRMED}</h4>
+                            <small>확정</small>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-danger">
+                            <h4>${statusCounts.CANCELLED}</h4>
+                            <small>취소</small>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-secondary">
+                            <h4>${statusCounts.COMPLETED}</h4>
+                            <small>완료</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 인기 레스토랑 차트 업데이트
+        function updatePopularRestaurantsChart() {
+            const { reservations, restaurants } = dashboardData;
+            const restaurantCounts = {};
+            
+            reservations.forEach(reservation => {
+                const restaurantId = reservation.restaurantId;
+                restaurantCounts[restaurantId] = (restaurantCounts[restaurantId] || 0) + 1;
+            });
+            
+            const sortedRestaurants = Object.entries(restaurantCounts)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 5);
+            
+            const chartContainer = document.getElementById('popularRestaurantsChart');
+            let chartHTML = '<div class="list-group list-group-flush">';
+            
+            sortedRestaurants.forEach(([restaurantId, count]) => {
+                const restaurant = restaurants.find(r => r.id == restaurantId);
+                if (restaurant) {
+                    chartHTML += `
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>${restaurant.name}</span>
+                            <span class="badge bg-primary rounded-pill">${count}건</span>
+                        </div>
+                    `;
+                }
+            });
+            
+            chartHTML += '</div>';
+            chartContainer.innerHTML = chartHTML;
+        }
+
+        // 최근 활동 업데이트
+        function updateRecentActivity() {
+            const { reservations } = dashboardData;
+            const recentReservations = reservations
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                .slice(0, 10);
+            
+            const activityContainer = document.getElementById('recentActivity');
+            let activityHTML = '';
+            
+            recentReservations.forEach(reservation => {
+                const date = new Date(reservation.createdAt).toLocaleString('ko-KR');
+                const statusText = getStatusText(reservation.status);
+                const statusClass = getStatusClass(reservation.status);
+                
+                activityHTML += `
+                    <div class="activity-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>예약 #${reservation.id}</strong>
+                                <br>
+                                <small class="text-muted">${date}</small>
+                            </div>
+                            <span class="badge ${statusClass}">${statusText}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            activityContainer.innerHTML = activityHTML;
+        }
+
+        // 상태 텍스트 변환
+        function getStatusText(status) {
+            const statusMap = {
+                'PENDING': '대기중',
+                'CONFIRMED': '확정',
+                'CANCELLED': '취소',
+                'COMPLETED': '완료'
+            };
+            return statusMap[status] || status;
+        }
+
+        // 상태 클래스 변환
+        function getStatusClass(status) {
+            const classMap = {
+                'PENDING': 'bg-warning',
+                'CONFIRMED': 'bg-success',
+                'CANCELLED': 'bg-danger',
+                'COMPLETED': 'bg-secondary'
+            };
+            return classMap[status] || 'bg-secondary';
+        }
+
+        // 대시보드 새로고침
+        function refreshDashboard() {
+            loadDashboardData();
+            showSuccess('대시보드가 새로고침되었습니다.');
+        }
+
+        // 데이터 내보내기
+        function exportData() {
+            const data = {
+                restaurants: dashboardData.restaurants,
+                customers: dashboardData.customers,
+                reservations: dashboardData.reservations,
+                exportDate: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `restaurant-data-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+            showSuccess('데이터가 성공적으로 내보내졌습니다.');
+        }
+
+        // 데이터 백업
+        function backupData() {
+            // 실제 구현에서는 서버에 백업 요청을 보냄
+            alert('데이터 백업 기능은 개발 중입니다.');
+        }
+
+        // 시스템 유지보수
+        function systemMaintenance() {
+            if (confirm('시스템 유지보수를 시작하시겠습니까? 이 작업은 시스템을 일시적으로 중단시킬 수 있습니다.')) {
+                alert('시스템 유지보수 기능은 개발 중입니다.');
+            }
+        }
+
+        // 성공 메시지 표시
+        function showSuccess(message) {
+            alert(message);
+        }
+
+        // 에러 메시지 표시
+        function showError(message) {
+            alert(message);
+        }
+    </script>
+</body>
+</html> 
