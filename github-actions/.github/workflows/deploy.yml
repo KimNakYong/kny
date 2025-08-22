@@ -1,0 +1,129 @@
+name: Deploy to AWS ECS
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY_USER: tf-user-service
+  ECR_REPOSITORY_STORE: tf-store-service
+  ECR_REPOSITORY_BOOKING: tf-booking-service
+  ECS_CLUSTER: tf-microservices-cluster
+  ECS_SERVICE_USER: tf-user-service
+  ECS_SERVICE_STORE: tf-store-service
+  ECS_SERVICE_BOOKING: tf-booking-service
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    # User Service Build & Deploy
+    - name: Build User Service Docker image
+      working-directory: ./TF-user-service
+      run: |
+        docker build -t ${{ env.ECR_REPOSITORY_USER }}:${{ github.sha }} .
+        docker tag ${{ env.ECR_REPOSITORY_USER }}:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_USER }}:${{ github.sha }}
+        docker tag ${{ env.ECR_REPOSITORY_USER }}:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_USER }}:latest
+
+    - name: Push User Service to ECR
+      run: |
+        docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_USER }}:${{ github.sha }}
+        docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_USER }}:latest
+
+    - name: Update User Service ECS service
+      run: |
+        aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service ${{ env.ECS_SERVICE_USER }} --force-new-deployment
+
+    # Store Service Build & Deploy
+    - name: Build Store Service Docker image
+      working-directory: ./TF-store-service
+      run: |
+        docker build -t ${{ env.ECR_REPOSITORY_STORE }}:${{ github.sha }} .
+        docker tag ${{ env.ECR_REPOSITORY_STORE }}:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_STORE }}:${{ github.sha }}
+        docker tag ${{ env.ECR_REPOSITORY_STORE }}:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_STORE }}:latest
+
+    - name: Push Store Service to ECR
+      run: |
+        docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_STORE }}:${{ github.sha }}
+        docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_STORE }}:latest
+
+    - name: Update Store Service ECS service
+      run: |
+        aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service ${{ env.ECS_SERVICE_STORE }} --force-new-deployment
+
+    # Booking Service Build & Deploy
+    - name: Build Booking Service Docker image
+      working-directory: ./TF-booking-service
+      run: |
+        docker build -t ${{ env.ECR_REPOSITORY_BOOKING }}:${{ github.sha }} .
+        docker tag ${{ env.ECR_REPOSITORY_BOOKING }}:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_BOOKING }}:${{ github.sha }}
+        docker tag ${{ env.ECR_REPOSITORY_BOOKING }}:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_BOOKING }}:latest
+
+    - name: Push Booking Service to ECR
+      run: |
+        docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_BOOKING }}:${{ github.sha }}
+        docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_BOOKING }}:latest
+
+    - name: Update Booking Service ECS service
+      run: |
+        aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service ${{ env.ECS_SERVICE_BOOKING }} --force-new-deployment
+
+    - name: Wait for deployment to complete
+      run: |
+        aws ecs wait services-stable --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE_USER }} ${{ env.ECS_SERVICE_STORE }} ${{ env.ECS_SERVICE_BOOKING }}
+
+    - name: Get ALB DNS name
+      id: alb-dns
+      run: |
+        ALB_DNS=$(aws elbv2 describe-load-balancers --names tf-alb --query 'LoadBalancers[0].DNSName' --output text --region ${{ env.AWS_REGION }})
+        echo "alb-dns=$ALB_DNS" >> $GITHUB_OUTPUT
+
+    - name: Deploy Frontend to S3
+      working-directory: ./TF-frontend
+      run: |
+        npm install
+        npm run build
+        aws s3 sync dist/ s3://tf-frontend-bucket --delete
+
+    - name: Deploy Frontend to CloudFront
+      run: |
+        aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+
+    - name: Notify deployment success
+      run: |
+        echo "✅ 배포 완료!"
+        echo "🌐 ALB DNS: ${{ steps.alb-dns.outputs.alb-dns }}"
+        echo "🔗 서비스 URL들:"
+        echo "   - User Service: http://${{ steps.alb-dns.outputs.alb-dns }}/api/users"
+        echo "   - Store Service: http://${{ steps.alb-dns.outputs.alb-dns }}/api/stores"
+        echo "   - Booking Service: http://${{ steps.alb-dns.outputs.alb-dns }}/api/bookings"
+        echo "   - Frontend: https://${{ secrets.CLOUDFRONT_DOMAIN }}"
