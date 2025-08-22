@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>레스토랑 예약 시스템</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 100px 0;
+        }
+        .feature-card {
+            transition: transform 0.3s ease;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        .restaurant-card {
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .restaurant-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        .btn-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+        }
+        .btn-custom:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+            color: white;
+            transform: translateY(-2px);
+        }
+        .stats-section {
+            background-color: #f8f9fa;
+            padding: 60px 0;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .footer {
+            background-color: #343a40;
+            color: white;
+            padding: 40px 0 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-utensils me-2"></i>레스토랑 예약 시스템
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/restaurants">레스토랑</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reservations">예약</a>
+                    </li>
+                    <li class="nav-item" id="loginNav" style="display: none;">
+                        <a class="nav-link" href="/login">로그인</a>
+                    </li>
+                    <li class="nav-item" id="signupNav" style="display: none;">
+                        <a class="nav-link" href="/signup">회원가입</a>
+                    </li>
+                    <li class="nav-item" id="userNav" style="display: none;">
+                        <a class="nav-link" href="#" id="userInfo">사용자</a>
+                    </li>
+                    <li class="nav-item" id="logoutNav" style="display: none;">
+                        <a class="nav-link" href="#" onclick="logout()">로그아웃</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container text-center">
+            <h1 class="display-4 fw-bold mb-4">최고의 레스토랑 예약 경험</h1>
+            <p class="lead mb-5">편리하고 안전한 온라인 예약 시스템으로 원하는 레스토랑을 쉽게 예약하세요</p>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="/restaurants" class="btn btn-custom btn-lg">
+                    <i class="fas fa-search me-2"></i>레스토랑 찾기
+                </a>
+                <a href="/reservations/new" class="btn btn-outline-light btn-lg">
+                    <i class="fas fa-calendar-plus me-2"></i>예약하기
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">주요 기능</h2>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-search fa-3x text-primary mb-3"></i>
+                            <h5 class="card-title">레스토랑 검색</h5>
+                            <p class="card-text">위치, 음식 종류, 평점 등 다양한 조건으로 원하는 레스토랑을 찾아보세요.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-calendar-check fa-3x text-success mb-3"></i>
+                            <h5 class="card-title">간편한 예약</h5>
+                            <p class="card-text">몇 번의 클릭만으로 원하는 시간에 테이블을 예약할 수 있습니다.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-mobile-alt fa-3x text-info mb-3"></i>
+                            <h5 class="card-title">모바일 친화적</h5>
+                            <p class="card-text">언제 어디서나 모바일로 편리하게 예약하고 관리할 수 있습니다.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Popular Restaurants Section -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center mb-5">인기 레스토랑</h2>
+            <div class="row g-4" id="popularRestaurants">
+                <!-- 레스토랑 카드들이 동적으로 로드됩니다 -->
+            </div>
+            <div class="text-center mt-4">
+                <a href="/restaurants" class="btn btn-custom">모든 레스토랑 보기</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalRestaurants">0</div>
+                        <p class="text-muted">등록된 레스토랑</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalReservations">0</div>
+                        <p class="text-muted">총 예약 수</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalCustomers">0</div>
+                        <p class="text-muted">등록된 고객</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number" id="satisfactionRate">98%</div>
+                        <p class="text-muted">고객 만족도</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-utensils me-2"></i>레스토랑 예약 시스템</h5>
+                    <p class="text-muted">최고의 레스토랑 예약 경험을 제공합니다.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <h6>연락처</h6>
+                    <p class="text-muted">
+                        <i class="fas fa-phone me-2"></i>02-1234-5678<br>
+                        <i class="fas fa-envelope me-2"></i>info@restaurant-reservation.com
+                    </p>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="text-center">
+                <p class="text-muted mb-0">&copy; 2024 레스토랑 예약 시스템. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 페이지 로드 시 데이터 가져오기
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPopularRestaurants();
+            loadStats();
+            checkLoginStatus();
+        });
+
+        // 로그인 상태 확인
+        function checkLoginStatus() {
+            const token = localStorage.getItem('authToken');
+            const userEmail = localStorage.getItem('userEmail');
+            const userName = localStorage.getItem('userName');
+            
+            if (token && userEmail && userName) {
+                // 로그인된 상태
+                document.getElementById('loginNav').style.display = 'none';
+                document.getElementById('signupNav').style.display = 'none';
+                document.getElementById('userNav').style.display = 'block';
+                document.getElementById('logoutNav').style.display = 'block';
+                document.getElementById('userInfo').textContent = userName;
+            } else {
+                // 로그인되지 않은 상태
+                document.getElementById('loginNav').style.display = 'block';
+                document.getElementById('signupNav').style.display = 'block';
+                document.getElementById('userNav').style.display = 'none';
+                document.getElementById('logoutNav').style.display = 'none';
+            }
+        }
+
+        // 로그아웃
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('userName');
+            alert('로그아웃되었습니다.');
+            window.location.reload();
+        }
+
+        // 인기 레스토랑 로드
+        async function loadPopularRestaurants() {
+            try {
+                const response = await fetch('/api/restaurants');
+                const restaurants = await response.json();
+                
+                const container = document.getElementById('popularRestaurants');
+                const popularRestaurants = restaurants.slice(0, 3); // 상위 3개만 표시
+                
+                popularRestaurants.forEach(restaurant => {
+                    const card = createRestaurantCard(restaurant);
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error('레스토랑 데이터 로드 실패:', error);
+            }
+        }
+
+        // 레스토랑 카드 생성
+        function createRestaurantCard(restaurant) {
+            const col = document.createElement('div');
+            col.className = 'col-md-4';
+            
+            col.innerHTML = `
+                <div class="card restaurant-card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">${restaurant.name}</h5>
+                        <p class="card-text text-muted">
+                            <i class="fas fa-map-marker-alt me-2"></i>${restaurant.address}
+                        </p>
+                        <p class="card-text">${restaurant.description}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-primary">수용인원: ${restaurant.capacity}명</span>
+                            <a href="/restaurants/${restaurant.id}" class="btn btn-sm btn-outline-primary">상세보기</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return col;
+        }
+
+        // 통계 데이터 로드
+        async function loadStats() {
+            try {
+                const [restaurantsResponse, reservationsResponse, customersResponse] = await Promise.all([
+                    fetch('/api/restaurants'),
+                    fetch('/api/reservations'),
+                    fetch('/api/customers')
+                ]);
+                
+                const restaurants = await restaurantsResponse.json();
+                const reservations = await reservationsResponse.json();
+                const customers = await customersResponse.json();
+                
+                document.getElementById('totalRestaurants').textContent = restaurants.length;
+                document.getElementById('totalReservations').textContent = reservations.length;
+                document.getElementById('totalCustomers').textContent = customers.length;
+            } catch (error) {
+                console.error('통계 데이터 로드 실패:', error);
+            }
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>레스토랑 목록 - 레스토랑 예약 시스템</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        .btn-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+        }
+        .btn-custom:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+            color: white;
+            transform: translateY(-2px);
+        }
+        .restaurant-card {
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .restaurant-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        .search-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 0;
+        }
+        .footer {
+            background-color: #343a40;
+            color: white;
+            padding: 40px 0 20px;
+        }
+        .filter-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        .no-results {
+            text-align: center;
+            padding: 60px 0;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-utensils me-2"></i>레스토랑 예약 시스템
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/restaurants">레스토랑</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reservations">예약</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">로그인</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/signup">회원가입</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Search Section -->
+    <section class="search-section">
+        <div class="container">
+            <h1 class="text-center mb-4">레스토랑 찾기</h1>
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control form-control-lg" id="searchInput" 
+                               placeholder="레스토랑 이름이나 주소를 입력하세요...">
+                        <button class="btn btn-light btn-lg" type="button" onclick="searchRestaurants()">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <div class="text-center">
+                        <button class="btn btn-outline-light me-2" onclick="showAllRestaurants()">
+                            <i class="fas fa-list me-2"></i>전체 보기
+                        </button>
+                        <button class="btn btn-outline-light me-2" onclick="showActiveRestaurants()">
+                            <i class="fas fa-check-circle me-2"></i>영업중
+                        </button>
+                        <button class="btn btn-outline-light" onclick="showAddRestaurantModal()">
+                            <i class="fas fa-plus me-2"></i>레스토랑 추가
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Restaurants List Section -->
+    <section class="py-5">
+        <div class="container">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h3>레스토랑 목록</h3>
+                    <p class="text-muted" id="resultCount">총 0개의 레스토랑</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary" onclick="sortByName()">
+                            <i class="fas fa-sort-alpha-down me-2"></i>이름순
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" onclick="sortByCapacity()">
+                            <i class="fas fa-users me-2"></i>수용인원순
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row g-4" id="restaurantsList">
+                <!-- 레스토랑 카드들이 여기에 동적으로 로드됩니다 -->
+            </div>
+            
+            <div id="noResults" class="no-results" style="display: none;">
+                <i class="fas fa-search fa-3x mb-3"></i>
+                <h4>검색 결과가 없습니다</h4>
+                <p>다른 검색어를 입력해보세요.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-utensils me-2"></i>레스토랑 예약 시스템</h5>
+                    <p class="text-muted">최고의 레스토랑 예약 경험을 제공합니다.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <h6>연락처</h6>
+                    <p class="text-muted">
+                        <i class="fas fa-phone me-2"></i>02-1234-5678<br>
+                        <i class="fas fa-envelope me-2"></i>info@restaurant-reservation.com
+                    </p>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="text-center">
+                <p class="text-muted mb-0">&copy; 2024 레스토랑 예약 시스템. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Add Restaurant Modal -->
+    <div class="modal fade" id="addRestaurantModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">새 레스토랑 추가</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addRestaurantForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="restaurantName" class="form-label">레스토랑 이름 *</label>
+                                    <input type="text" class="form-control" id="restaurantName" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="restaurantPhone" class="form-label">전화번호 *</label>
+                                    <input type="tel" class="form-control" id="restaurantPhone" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="restaurantAddress" class="form-label">주소 *</label>
+                            <input type="text" class="form-control" id="restaurantAddress" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="restaurantDescription" class="form-label">설명</label>
+                            <textarea class="form-control" id="restaurantDescription" rows="3"></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="restaurantCapacity" class="form-label">수용 인원 *</label>
+                                    <input type="number" class="form-control" id="restaurantCapacity" min="1" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="restaurantHours" class="form-label">영업시간</label>
+                                    <input type="text" class="form-control" id="restaurantHours" placeholder="예: 11:00-22:00">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="restaurantActive" checked>
+                                <label class="form-check-label" for="restaurantActive">
+                                    활성화 상태
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="button" class="btn btn-custom" onclick="addRestaurant()">추가</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let allRestaurants = [];
+        let filteredRestaurants = [];
+
+        // 페이지 로드 시 레스토랑 목록 로드
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRestaurants();
+        });
+
+        // 레스토랑 목록 로드
+        async function loadRestaurants() {
+            try {
+                const response = await fetch('/api/restaurants');
+                allRestaurants = await response.json();
+                filteredRestaurants = [...allRestaurants];
+                displayRestaurants();
+            } catch (error) {
+                console.error('레스토랑 데이터 로드 실패:', error);
+                showError('레스토랑 데이터를 불러오는데 실패했습니다.');
+            }
+        }
+
+        // 레스토랑 목록 표시
+        function displayRestaurants() {
+            const container = document.getElementById('restaurantsList');
+            const noResults = document.getElementById('noResults');
+            
+            if (filteredRestaurants.length === 0) {
+                container.innerHTML = '';
+                noResults.style.display = 'block';
+                document.getElementById('resultCount').textContent = '검색 결과가 없습니다';
+                return;
+            }
+
+            noResults.style.display = 'none';
+            container.innerHTML = '';
+            
+            filteredRestaurants.forEach(restaurant => {
+                const card = createRestaurantCard(restaurant);
+                container.appendChild(card);
+            });
+            
+            document.getElementById('resultCount').textContent = `총 ${filteredRestaurants.length}개의 레스토랑`;
+        }
+
+        // 레스토랑 카드 생성
+        function createRestaurantCard(restaurant) {
+            const col = document.createElement('div');
+            col.className = 'col-md-6 col-lg-4';
+            
+            col.innerHTML = `
+                <div class="card restaurant-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">${restaurant.name}</h5>
+                            <span class="badge ${restaurant.active ? 'bg-success' : 'bg-secondary'}">
+                                ${restaurant.active ? '영업중' : '휴업'}
+                            </span>
+                        </div>
+                        <p class="card-text text-muted">
+                            <i class="fas fa-map-marker-alt me-2"></i>${restaurant.address}
+                        </p>
+                        <p class="card-text">${restaurant.description || '설명이 없습니다.'}</p>
+                        <div class="row text-muted small mb-3">
+                            <div class="col-6">
+                                <i class="fas fa-phone me-1"></i>${restaurant.phone}
+                            </div>
+                            <div class="col-6">
+                                <i class="fas fa-users me-1"></i>${restaurant.capacity}명
+                            </div>
+                        </div>
+                        ${restaurant.openingHours ? `
+                        <p class="card-text text-muted small">
+                            <i class="fas fa-clock me-1"></i>${restaurant.openingHours}
+                        </p>
+                        ` : ''}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="/restaurants/${restaurant.id}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye me-1"></i>상세보기
+                            </a>
+                            <a href="/reservations/new?restaurantId=${restaurant.id}" class="btn btn-sm btn-custom">
+                                <i class="fas fa-calendar-plus me-1"></i>예약하기
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return col;
+        }
+
+        // 레스토랑 검색
+        function searchRestaurants() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            if (!searchTerm.trim()) {
+                filteredRestaurants = [...allRestaurants];
+            } else {
+                filteredRestaurants = allRestaurants.filter(restaurant => 
+                    restaurant.name.toLowerCase().includes(searchTerm) ||
+                    restaurant.address.toLowerCase().includes(searchTerm) ||
+                    (restaurant.description && restaurant.description.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            displayRestaurants();
+        }
+
+        // 전체 레스토랑 보기
+        function showAllRestaurants() {
+            filteredRestaurants = [...allRestaurants];
+            displayRestaurants();
+            document.getElementById('searchInput').value = '';
+        }
+
+        // 영업중인 레스토랑만 보기
+        function showActiveRestaurants() {
+            filteredRestaurants = allRestaurants.filter(restaurant => restaurant.active);
+            displayRestaurants();
+        }
+
+        // 이름순 정렬
+        function sortByName() {
+            filteredRestaurants.sort((a, b) => a.name.localeCompare(b.name));
+            displayRestaurants();
+        }
+
+        // 수용인원순 정렬
+        function sortByCapacity() {
+            filteredRestaurants.sort((a, b) => b.capacity - a.capacity);
+            displayRestaurants();
+        }
+
+        // 레스토랑 추가 모달 표시
+        function showAddRestaurantModal() {
+            const modal = new bootstrap.Modal(document.getElementById('addRestaurantModal'));
+            modal.show();
+        }
+
+        // 새 레스토랑 추가
+        async function addRestaurant() {
+            const formData = {
+                name: document.getElementById('restaurantName').value,
+                address: document.getElementById('restaurantAddress').value,
+                phone: document.getElementById('restaurantPhone').value,
+                description: document.getElementById('restaurantDescription').value,
+                capacity: parseInt(document.getElementById('restaurantCapacity').value),
+                openingHours: document.getElementById('restaurantHours').value,
+                active: document.getElementById('restaurantActive').checked
+            };
+
+            try {
+                const response = await fetch('/api/restaurants', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addRestaurantModal'));
+                    modal.hide();
+                    document.getElementById('addRestaurantForm').reset();
+                    loadRestaurants(); // 목록 새로고침
+                    showSuccess('레스토랑이 성공적으로 추가되었습니다.');
+                } else {
+                    showError('레스토랑 추가에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('레스토랑 추가 실패:', error);
+                showError('레스토랑 추가 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 성공 메시지 표시
+        function showSuccess(message) {
+            // Bootstrap toast나 alert를 사용할 수 있습니다
+            alert(message);
+        }
+
+        // 에러 메시지 표시
+        function showError(message) {
+            alert(message);
+        }
+
+        // 검색 입력 필드에서 Enter 키 처리
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchRestaurants();
+            }
+        });
+    </script>
+</body>
+</html> 
