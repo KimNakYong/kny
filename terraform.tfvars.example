@@ -1,0 +1,77 @@
+# =============================================================================
+# Team FOG - Terraform 변수 설정 파일 (예제)
+# team-fog-complete-infrastructure.tf와 함께 사용
+# 
+# 사용 방법:
+# 1. 이 파일을 terraform.tfvars로 복사
+# 2. 아래 값들을 실제 AWS 리소스 ID로 변경
+# 3. terraform apply 실행
+# =============================================================================
+
+# AWS 기본 설정
+aws_region                 = "ap-northeast-2"
+environment                = "prod"
+project_name               = "fog"
+
+# ECS 설정
+desired_count              = 2
+log_retention_days         = 30
+awslogs_region             = "ap-northeast-2"
+
+# 네트워크 설정 (실제 AWS 리소스 ID로 변경 필요)
+private_subnet_ids         = ["subnet-XXXXXXXXX", "subnet-XXXXXXXXX"]
+service_security_group_id  = "sg-XXXXXXXXX"
+
+# 서비스별 리소스 설정
+user_cpu                   = "512"
+user_memory                = "1024"
+booking_cpu                = "512"
+booking_memory             = "1024"
+store_cpu                  = "512"
+store_memory               = "1024"
+
+# ECR 이미지 설정 (실제 ECR 리포지토리 URI로 변경 필요)
+user_image                 = "YOUR_AWS_ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/user-service:latest"
+booking_image              = "YOUR_AWS_ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/booking-service:latest"
+store_image                = "YOUR_AWS_ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/store-service:latest"
+
+# ALB Target Group ARN 설정 (실제 Target Group ARN으로 변경 필요)
+user_tg_arn                = "arn:aws:elasticloadbalancing:ap-northeast-2:YOUR_AWS_ACCOUNT_ID:targetgroup/user/XXXXXXXXX"
+booking_tg_arn             = "arn:aws:elasticloadbalancing:ap-northeast-2:YOUR_AWS_ACCOUNT_ID:targetgroup/booking/XXXXXXXXX"
+store_tg_arn               = "arn:aws:elasticloadbalancing:ap-northeast-2:YOUR_AWS_ACCOUNT_ID:targetgroup/store/XXXXXXXXX"
+
+# Secrets Manager ARN 설정 (실제 Secrets Manager ARN으로 변경 필요)
+user_db_secret_arn         = "arn:aws:secretsmanager:ap-northeast-2:YOUR_AWS_ACCOUNT_ID:secret:fog/db/oracle/user"
+booking_db_secret_arn      = "arn:aws:secretsmanager:ap-northeast-2:YOUR_AWS_ACCOUNT_ID:secret:fog/db/oracle/booking-XXXXXXXXX"
+store_db_secret_arn        = "arn:aws:secretsmanager:ap-northeast-2:YOUR_AWS_ACCOUNT_ID:secret:fog/db/oracle/store"
+
+# Cognito 설정 (실제 Cognito User Pool ID로 변경 필요)
+cognito_user_pool_id       = "ap-northeast-2_XXXXXXXXX"
+
+# VPC 및 네트워크 설정 (실제 VPC/서브넷 ID로 변경 필요)
+vpc_id                     = "vpc-XXXXXXXXX"
+public_subnet_id_2a        = "subnet-XXXXXXXXX"
+public_subnet_id_2c        = "subnet-XXXXXXXXX"
+
+# =============================================================================
+# 설정 가이드:
+# 
+# 1. AWS 계정 ID 확인:
+#    aws sts get-caller-identity --query Account --output text
+#
+# 2. VPC 및 서브넷 ID 확인:
+#    aws ec2 describe-vpcs --region ap-northeast-2
+#    aws ec2 describe-subnets --region ap-northeast-2
+#
+# 3. 보안 그룹 ID 확인:
+#    aws ec2 describe-security-groups --region ap-northeast-2
+#
+# 4. ALB Target Group ARN 확인:
+#    aws elbv2 describe-target-groups --region ap-northeast-2
+#
+# 5. Secrets Manager ARN 확인:
+#    aws secretsmanager list-secrets --region ap-northeast-2
+#
+# 6. Cognito User Pool ID 확인:
+#    aws cognito-idp list-user-pools --region ap-northeast-2 --max-items 10
+# =============================================================================
